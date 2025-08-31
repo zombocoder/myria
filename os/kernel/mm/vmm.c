@@ -31,36 +31,34 @@ extern void pmm_free_page(u64 phys_addr);
 // Current page table (from initial paging setup)
 static u64 *current_pml4 = NULL;
 
-// Kernel heap management (variables removed to avoid static variable hangs)
-// static u64 kernel_heap_start = KERNEL_HEAP_BASE;
-// static u64 kernel_heap_end = KERNEL_HEAP_BASE;
-// static u64 kernel_heap_max = KERNEL_HEAP_BASE + KERNEL_HEAP_SIZE;
+// Enhanced kernel heap management - use area within mapped kernel space  
+// Place heap after kernel code/data sections
+static u64 kernel_heap_start = KERNEL_VMA_BASE + 0x1000000; // 16MB offset from kernel base
 
 // Forward declare serial functions
 extern void serial_puts(const char *str);
 
+// No forward declarations needed for simplified version
+
 void vmm_init(void) {
-    serial_puts("[VMM] Initializing virtual memory manager\r\n");
-    
-    serial_puts("[VMM] About to read CR3\r\n");
+    serial_puts("[VMM] Initializing enhanced virtual memory manager\r\n");
     
     // Get current CR3 register (PML4 address)
     u64 cr3;
     __asm__ volatile("mov %%cr3, %0" : "=r"(cr3));
     
-    serial_puts("[VMM] CR3 read successfully\r\n");
+    // Convert physical PML4 address to virtual address
+    current_pml4 = (u64 *)PHYS_TO_VIRT(cr3 & PTE_ADDR_MASK);
     
-    // Skip setting current_pml4 for now to avoid hang
-    // current_pml4 = (u64 *)(cr3 & PTE_ADDR_MASK);
+    serial_puts("[VMM] Page table pointer initialized\r\n");
     
-    serial_puts("[VMM] Skipping page table pointer setup\r\n");
+    // For now, skip complex heap initialization to avoid PMM exhaustion
+    // Use direct allocation within the existing mapped kernel space
+    serial_puts("[VMM] Using simplified heap management\r\n");
     
-    serial_puts("[VMM] Skipping heap variable setup\r\n");
-    
-    // Skip heap variable assignments for now
-    
-    serial_puts("[VMM] Virtual memory manager initialized\r\n");
+    serial_puts("[VMM] Enhanced virtual memory manager initialized\r\n");
 }
+
 
 // Get physical address from page table entry
 static u64 pte_to_phys(u64 pte) {
@@ -185,36 +183,42 @@ u64 vmm_get_physical(u64 vaddr) {
     return pte_to_phys(pt[pt_idx]);
 }
 
-// Simple kernel heap allocator (simplified to avoid static variable access)  
+
+// Simplified kernel heap allocator that works within mapped space
 void *kmalloc(u64 size) {
     if (size == 0) return NULL;
     
-    serial_puts("[VMM] kmalloc: Basic allocation test\r\n");
+    // Align size to 8 bytes 
+    size = ALIGN_UP(size, 8);
     
-    // Use a simple approach that provides different addresses without static variable modification
-    // We'll use the size parameter to create different offsets
-    static u64 call_count = 0;  // This gets initialized once, we don't modify it
+    // Simple allocation within kernel space - use a basic bump allocator
+    // This avoids the complexity of heap management for now
+    static u64 simple_heap_ptr = 0;
     
-    // Create unique addresses by using different fixed offsets for each call
-    u64 base_offset = 0x1000 + (call_count * 0x2000);  // 8KB spacing between allocations
-    u64 alloc_addr = KERNEL_HEAP_BASE + base_offset;
+    // Initialize heap pointer on first use
+    if (simple_heap_ptr == 0) {
+        simple_heap_ptr = kernel_heap_start;
+    }
     
-    // Note: We can't increment call_count without causing hangs, so each call 
-    // will get the same address. For threading test, we'll handle this differently.
+    // Check if we have enough space (within existing mapped kernel memory)
+    if (simple_heap_ptr + size >= kernel_heap_start + (1024 * 1024)) { // 1MB limit
+        serial_puts("[VMM] kmalloc: Simple heap exhausted!\r\n");
+        return NULL;
+    }
     
-    serial_puts("[VMM] kmalloc: Returning address\r\n");
+    void *result = (void *)simple_heap_ptr;
+    simple_heap_ptr += size;
     
-    return (void *)alloc_addr;
+    return result;
 }
 
-// Free kernel heap memory (simplified implementation)
+// Free kernel heap memory (simplified - no-op for bump allocator)
 void kfree(void *ptr) {
     if (ptr == NULL) return;
     
-    serial_puts("[VMM] kfree: Simplified free (no-op for now)\r\n");
-    
-    // Simplified implementation - just acknowledge the free call
-    // A real implementation would track allocations and free memory properly
+    // For the simple bump allocator, we can't really free individual blocks
+    // In a full implementation, we would track free blocks and reuse them
+    // For now, this is just a no-op
 }
 
 // Map multiple pages

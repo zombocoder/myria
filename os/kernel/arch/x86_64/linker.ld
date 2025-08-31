@@ -12,13 +12,18 @@ SECTIONS {
     /* Keep track of kernel start */
     __kernel_start = .;
     
-    /* Code section with Limine requests at start */
+    /* Code section */
     .text : ALIGN(4K) {
         __text_start = .;
-        KEEP(*(.requests*))
         *(.text*)
         __text_end = .;
     } :text
+    
+    /* Limine requests section */
+    .limine_reqs : {
+        KEEP(*(.limine_reqs))
+        KEEP(*(.requests*))  /* Keep old name too for compatibility */
+    }
     
     /* Read-only data */
     .rodata : ALIGN(4K) {
@@ -37,15 +42,15 @@ SECTIONS {
     /* BSS (uninitialized data) */
     .bss : ALIGN(4K) {
         __bss_start = .;
-        *(.bss*)
+        *(.bss .bss.*)
         *(COMMON)
         __bss_end = .;
     }
     
-    /* Kernel stack */
-    . = ALIGN(4K);
+    /* Kernel stack - separate section to ensure proper allocation */
+    . = ALIGN(16);
     __stack_bottom = .;
-    . += 0x2000;  /* 8KB stack - minimal for early boot */
+    . += 0x4000;  /* 16KB stack */
     __stack_top = .;
     
     /* Keep track of kernel end */

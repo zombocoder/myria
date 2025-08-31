@@ -49,12 +49,28 @@ void vmm_unmap_pages(u64 vaddr_start, u64 count);
 void *kmalloc(u64 size);
 void kfree(void *ptr);
 
+// Paging and memory management
+u64 setup_kernel_page_tables(void);
+void activate_kernel_page_tables(u64 pml4_phys);
+void debug_page_mapping(u64 virt_addr);
+
+// Forward declare thread type
+struct thread;
+typedef struct thread thread_t;
+
 // Threading and scheduling
 void sched_init(void);
+void sched_start(void);
 u32 thread_create(void (*entry_point)(void *), void *arg, const char *name);
 void sched_yield(void);
 void sched_tick(void);
 void sched_print_stats(void);
+thread_t *sched_current_thread(void);
+
+// System calls
+void syscall_init(void);
+u64 syscall_dispatch(u64 syscall_num, u64 arg1, u64 arg2, u64 arg3, u64 arg4, u64 arg5, u64 arg6);
+void syscall_print_stats(void);
 
 // MSR functions
 u64 read_msr(u32 msr);

@@ -4,8 +4,10 @@ set(KERNEL_SOURCES
     arch/x86_64/portio.c
     util/serial.c
     mm/pmm_simple.c
+    mm/paging.c
     mm/vmm.c
     sched/thread_minimal.c
+    syscall/syscalls.c
 )
 
 # Apply kernel-specific flags
