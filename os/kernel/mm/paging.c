@@ -36,7 +36,7 @@ static inline void write_cr3(u64 val) {
     __asm__ volatile ("mov %0, %%cr3" :: "r"(val) : "memory");
 }
 
-static inline void invlpg(u64 addr) {
+void invlpg(u64 addr) {
     __asm__ volatile ("invlpg (%0)" :: "r"(addr) : "memory");
 }
 
@@ -55,7 +55,7 @@ static u64 get_hhdm_base(void) {
 }
 
 // Convert physical address to virtual using HHDM (no static variables!)
-static inline u64 phys_to_virt(u64 phys_addr) {
+u64 phys_to_virt(u64 phys_addr) {
     // Get HHDM base each time - no static variables during bootstrap!
     u64 hhdm_base = get_hhdm_base();
     return phys_addr + hhdm_base;

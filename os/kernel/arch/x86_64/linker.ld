@@ -1,8 +1,10 @@
 ENTRY(_start)
 
-/* Program headers */
+/* Program headers for W^X enforcement */
 PHDRS {
-    text PT_LOAD FLAGS(5);
+    text PT_LOAD FLAGS(5);    /* R+X */
+    rodata PT_LOAD FLAGS(4);  /* R */
+    data PT_LOAD FLAGS(6);    /* R+W */
 }
 
 SECTIONS {
@@ -30,22 +32,32 @@ SECTIONS {
         __rodata_start = .;
         *(.rodata*)
         __rodata_end = .;
-    }
+    } :rodata
     
     /* Initialized data */  
     .data : ALIGN(4K) {
         __data_start = .;
         *(.data*)
+        *(.sdata*)
         __data_end = .;
-    }
+    } :data
     
     /* BSS (uninitialized data) */
     .bss : ALIGN(4K) {
         __bss_start = .;
         *(.bss .bss.*)
+        *(.sbss .sbss.*)
         *(COMMON)
         __bss_end = .;
-    }
+    } :data
+    
+    /* TSS and per-CPU data */
+    .percpu : ALIGN(4K) {
+        __percpu_start = .;
+        *(.percpu*)
+        *(.tss*)
+        __percpu_end = .;
+    } :data
     
     /* Kernel stack - separate section to ensure proper allocation */
     . = ALIGN(16);

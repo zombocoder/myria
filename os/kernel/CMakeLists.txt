@@ -1,11 +1,20 @@
 set(KERNEL_SOURCES
     minimal_test.c
+    user_init.c
+    user_payload.S
     arch/x86_64/start.S
     arch/x86_64/portio.c
+    arch/x86_64/gdt.c
+    arch/x86_64/gdt_flush.S
+    arch/x86_64/idt_minimal.c
+    arch/x86_64/msr.c
+    arch/x86_64/syscall_entry.S
     util/serial.c
     mm/pmm_simple.c
     mm/paging.c
     mm/vmm.c
+    mm/user_mapping.c
+    mm/user_as.c
     sched/thread_minimal.c
     syscall/syscalls.c
 )

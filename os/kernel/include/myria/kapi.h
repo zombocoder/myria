@@ -19,8 +19,11 @@ void panic(const char *fmt, ...) NORETURN;
 
 // x86-64 specific
 void gdt_init(void);
+void tss_init(void);
 void idt_init(void);
-void idt_set_gate(u8 num, u64 base, u16 sel, u8 flags);
+void enter_user(u64 rip, u64 rsp, u64 rflags);
+u64 get_kernel_stack(void);
+void set_kernel_stack(u64 stack_top);
 void setup_initial_paging(void);
 void enable_paging(void);
 void lapic_init(void);
@@ -53,6 +56,25 @@ void kfree(void *ptr);
 u64 setup_kernel_page_tables(void);
 void activate_kernel_page_tables(u64 pml4_phys);
 void debug_page_mapping(u64 virt_addr);
+u64 phys_to_virt(u64 phys_addr);
+void invlpg(u64 addr);
+
+// User address space management
+bool setup_user_address_space(void **user_code_va, void **user_stack_top, u64 code_size);
+bool copy_user_code(void *user_code_va, const void *kernel_code, u64 code_size);
+bool make_code_page_executable(void *user_code_va);
+bool map_user_4k(u64 user_va, u64 phys_addr, u64 flags);
+
+// Isolated user address space (separate PML4)
+void init_kernel_pml4_template(void);
+u64 user_as_create(void);
+bool user_map_4k_in_pml4(u64 pml4_phys, u64 va, u64 pa, bool writable, bool executable);
+u64 create_user_process(void);
+void switch_to_user_process(u64 user_pml4_phys);
+
+// User payload (from assembly)
+extern u8 user_payload_start[];
+extern u8 user_payload_end[];
 
 // Forward declare thread type
 struct thread;
@@ -75,6 +97,7 @@ void syscall_print_stats(void);
 // MSR functions
 u64 read_msr(u32 msr);
 void write_msr(u32 msr, u64 value);
+void setup_syscall_msrs(void);
 
 // Port I/O
 static inline void outb(u16 port, u8 val) {

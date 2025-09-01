@@ -4,6 +4,7 @@
 // Forward declarations
 extern u32 thread_create(void (*entry_point)(void *), void *arg, const char *name);
 extern void sched_run_threads(void);
+extern void test_user_mode(void);
 
 // Simple test function to verify C function calls work
 void simple_test_function(void) {
@@ -21,6 +22,20 @@ void x86_early_init(void) {
     activate_kernel_page_tables(pml4_phys);
     serial_puts("Page tables activated - globals now accessible!\r\n");
     
+    // Initialize GDT and TSS for user/kernel separation
+    serial_puts("About to init GDT\r\n");
+    gdt_init();
+    serial_puts("GDT init completed\r\n");
+    
+    serial_puts("About to init TSS\r\n");
+    tss_init();
+    serial_puts("TSS init completed\r\n");
+    
+    // Initialize IDT for fault handling
+    serial_puts("About to init IDT\r\n");
+    idt_init();
+    serial_puts("IDT init completed\r\n");
+    
     // NOW we can safely access global variables
     serial_puts("About to init PMM (globals now safe)\r\n");
     pmm_init();
@@ -31,6 +46,11 @@ void x86_early_init(void) {
     vmm_init();
     serial_puts("VMM init completed\r\n");
     
+    // Initialize kernel PML4 template for user address spaces
+    serial_puts("About to init kernel PML4 template\r\n");
+    init_kernel_pml4_template();
+    serial_puts("Kernel PML4 template initialized\r\n");
+    
     // Initialize basic threading system
     serial_puts("About to init scheduler\r\n");
     sched_init();
@@ -40,6 +60,11 @@ void x86_early_init(void) {
     serial_puts("About to init syscalls\r\n");
     syscall_init();
     serial_puts("Syscalls init completed\r\n");
+    
+    // Setup SYSCALL/SYSRET MSRs for user mode
+    serial_puts("About to setup syscall MSRs\r\n");
+    setup_syscall_msrs();
+    serial_puts("Syscall MSRs setup completed\r\n");
     
     serial_puts("x86_early_init complete!\r\n");
 }
@@ -216,6 +241,10 @@ void kmain(void) {
     serial_puts("About to test system calls\r\n");
     test_system_calls();
     serial_puts("System calls test complete\r\n");
+    
+    serial_puts("About to test user mode\r\n");
+    test_user_mode();
+    serial_puts("User mode test complete\r\n");
     
     // Test complete - kernel is working!
     serial_puts("\r\n=== KERNEL BOOT SUCCESS ===\r\n");
