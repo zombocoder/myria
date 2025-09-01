@@ -39,11 +39,11 @@ jobs:
             https://github.com/lordmilko/i686-elf-tools/releases/download/7.1.0/x86_64-elf-tools-linux.zip
 
           sudo unzip /tmp/x86_64-elf-gcc.zip -d /usr/local
-          echo "/usr/local/cross/bin" >> $GITHUB_PATH
+          echo "/usr/local/bin" >> $GITHUB_PATH
 
           # Verify installation
-          /usr/local/cross/bin/x86_64-elf-gcc --version
-          /usr/local/cross/bin/x86_64-elf-ld --version
+          /usr/local/bin/x86_64-elf-gcc --version
+          /usr/local/bin/x86_64-elf-ld --version
 
       - name: Build kernel
         working-directory: os
