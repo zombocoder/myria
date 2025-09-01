@@ -32,18 +32,6 @@ jobs:
             curl \
             git
 
-      - name: Install cross-compiler toolchain
-        run: |
-          # Install x86_64-elf cross-compiler
-          wget -O /tmp/x86_64-elf-gcc.tar.xz \
-            https://github.com/lordmilko/i686-elf-tools/releases/download/7.1.0/x86_64-elf-tools-linux.tar.xz
-          sudo tar -C /usr/local -xf /tmp/x86_64-elf-gcc.tar.xz
-          echo "/usr/local/cross/bin" >> $GITHUB_PATH
-
-          # Verify installation
-          /usr/local/cross/bin/x86_64-elf-gcc --version
-          /usr/local/cross/bin/x86_64-elf-ld --version
-
       - name: Build kernel
         working-directory: os
         run: |
